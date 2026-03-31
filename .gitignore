@@ -202,7 +202,7 @@ cython_debug/
 .cursorindexingignore
 
 # Streamlit Config
-.streamlit/
+.streamlit/sec*
 .ipynb_checkpoints/
 **/.ipynb_checkpoints/
 *-checkpoint.ipynb

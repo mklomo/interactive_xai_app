@@ -208,7 +208,13 @@ cython_debug/
 **/*checkpoint*/
 *-checkpoint.ipynb
 *-checkpoint.txt
+# Ignore Jupyter checkpoints everywhere
+**/.ipynb_checkpoints/
 
+
+# Ignore Python cache everywhere
+__pycache__/
+**/__pycache__/
 # Marimo
 marimo/_static/
 marimo/_lsp/

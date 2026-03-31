@@ -129,7 +129,7 @@ prompt_toolkit
 propcache
 protobuf
 psutil
-psycopg2
+psycopg2-binary   # ← Changed from psycopg2
 ptyprocess
 pure_eval
 pyarrow

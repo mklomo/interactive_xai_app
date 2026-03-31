@@ -204,6 +204,9 @@ cython_debug/
 # Streamlit Config
 .streamlit/
 
+# ipynb checkpoints
+.ipynb_checkpoints
+
 # Marimo
 marimo/_static/
 marimo/_lsp/

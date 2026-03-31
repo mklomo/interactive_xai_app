@@ -1,0 +1,19 @@
+"
+Affect (Emotional Content)
+Description: Affect measures the rate of words reflecting focus on emotion and emotional content, calculated as a percentage of total words using Linguistic Inquiry and Word Count (LIWC). It includes basic positive emotions (e.g., words like "happy", "love"), negative emotions (e.g., "hate", "disgust"), positive sentiment (e.g., "birthday", "laugh"), and negative sentiment (e.g., "frustrated", "grave"). Higher affect rates indicate greater attention to emotions and affective ideas.
+
+--
+
+Analytic Writing (Style Complexity)
+Description: Analytic writing is an index comprised of seven function words (articles + prepositions - pronouns - auxiliary verbs - adverbs - conjunctions - negations), scored from 0 (low analytic, more narrative style) to 100 (high analytic, more formal and complex style). It serves as a proxy for elaborate and complex thinking, reflecting how one reasons rather than what they reason about. Scores are percentiles based on standardized large corpora.
+
+--
+
+Adjectives (Descriptiveness)
+Description: Adjectives measure the rate of descriptive words (e.g., "funny", "quiet") as a percentage of total words, evaluating the elaborate and narrative-like style of text. Higher rates indicate more descriptive, detailed language patterns.
+
+--
+
+Readability (Structural Complexity)
+Description: Readability is operationalized using the Flesch Reading Ease metric, which calculates complexity based on words per sentence and syllables per word. Higher scores indicate easier-to-read text (shorter sentences and words); lower scores indicate more complex, less readable text.
+"

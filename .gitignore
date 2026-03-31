@@ -205,7 +205,7 @@ cython_debug/
 .streamlit/sec*
 .ipynb_checkpoints/
 **/.ipynb_checkpoints/
-*/*_checkpoints/
+**/*checkpoint*/
 *-checkpoint.ipynb
 *-checkpoint.txt
 

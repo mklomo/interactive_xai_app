@@ -5,6 +5,7 @@ joblib
 Markdown
 numpy
 pandas
+psycopg2-binary
 bcrypt
 SQLAlchemy
 streamlit>=1.28.0

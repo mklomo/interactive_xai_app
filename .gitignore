@@ -202,7 +202,7 @@ cython_debug/
 .cursorindexingignore
 
 # Streamlit Config
-*.streamlit/
+.streamlit/
 
 # Marimo
 marimo/_static/

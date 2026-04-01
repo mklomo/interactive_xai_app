@@ -1,12 +1,14 @@
 altair
 cohere
-faiss-cpu           
+faiss-cpu
+interpret           
 joblib
 Markdown
 numpy
 pandas
 psycopg2-binary
 bcrypt
+scikit-learn
 SQLAlchemy
 streamlit>=1.28.0
 streamlit-scroll-to-top

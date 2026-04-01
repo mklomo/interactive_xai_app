@@ -9,22 +9,19 @@ initialize_session()
 with st.container(border=True):
     st.title("Log in", text_alignment="center")
 
+    # Your Email
     email = st.text_input(
         "Please enter your UNCG email",
         key="login_email"
     ).strip().lower()
 
-    password = st.text_input(
-        "Please enter your password",
-        key="password",
-        type="password"
-    ).strip()
+    password = email
 
     col1, col2, col3 = st.columns(3)
     with col2:
         if st.button("Log in", use_container_width=True):
             if not email or not password:
-                st.error("Please enter both email and password")
+                st.error("Please enter your UNCG Email")
                 st.stop()
 
             # Now safe to use st.session_state.hub (initialized in Main.py)
@@ -43,7 +40,7 @@ with st.container(border=True):
                 st.rerun()   # Let Main.py handle the correct navigation
 
             else:
-                st.error("Invalid email or password")
+                st.error("Invalid UNCG email")
 
 # Link to signup
 # st.page_link(pages["signup"], label="Don't have an account? Please Signup!")

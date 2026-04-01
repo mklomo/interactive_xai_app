@@ -13,9 +13,9 @@ with st.container(border=True):
     # Title of page
     st.title("Create Account")
     # User Email
-    email = st.text_input("Email")
-    password = st.text_input("Password", type="password")
-    confirm_password = st.text_input("Confirm Password", type="password")
+    email = (st.text_input("Email")).strip().lower()
+    password = email
+    confirm_password = email
     if st.button("Create Account"):
         if password != confirm_password:
             st.error("Passwords do not match")
@@ -23,8 +23,6 @@ with st.container(border=True):
             user = hub.user_service.create_user(email, password)
             if user:
                 st.success("Account Created Successfully")
-                # Now navigate to login page
-                st.switch_page(pages["login"])
             else:
                 st.error("Please enter valid email or password")
             

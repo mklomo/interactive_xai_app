@@ -1,6 +1,6 @@
 altair==6.0.0
 cohere==5.20.1
-faiss
+faiss-cpu
 interpret==0.7.0           
 joblib==1.5.2
 Markdown==3.10.2

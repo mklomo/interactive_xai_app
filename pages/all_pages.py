@@ -2,8 +2,8 @@ import streamlit as st
 
 
 all_pages = {
-    "welcome": st.Page("pages/welcome.py", title="Welcome", icon=":material/home:"),
-    "login": st.Page("pages/login.py", title="Log in", icon=":material/login:"),
+    "welcome": st.Page("pages/welcome.py", title="Welcome", icon=":material/home:", default=True),
+    "login": st.Page("pages/login.py", title="Log in", icon=":material/login:", default=True),
     "signup": st.Page("pages/signup.py", title="Sign up", icon=":material/login:"),
     "pre_treatment_survey": st.Page("pages/pre_treatment_survey.py", title="Survey", icon=":material/home:"),
     "post_treatment_survey": st.Page("pages/post_treatment_survey.py", title="Survey", icon=":material/home:"),

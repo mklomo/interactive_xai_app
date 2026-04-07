@@ -42,7 +42,7 @@ def setup_page():
 def main():
     setup_page() # Your existing CSS/Config
 
-    st.markdown("<h1>Please Complete the Survey</h1>", unsafe_allow_html=True)
+    st.markdown("<h1>Well done for finishing Stage 3! Please Complete the Survey</h1>", unsafe_allow_html=True)
 
     # 1. The Survey Iframe (Clean and simple)
     _, center_content, _ = st.columns([1, 10, 1])

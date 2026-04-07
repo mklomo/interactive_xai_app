@@ -28,6 +28,7 @@ if st.session_state.logged_in:
                 pages["post_treatment_survey"],
                 pages["completion"]
             ]
+    
     else:
         hub = st.session_state.hub
         user_id = st.session_state.user_id
@@ -59,4 +60,5 @@ else:
     nav_list = [pages["login"]]
 
 page = st.navigation(nav_list)
+# print(nav_list)
 page.run()

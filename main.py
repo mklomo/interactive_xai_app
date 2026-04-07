@@ -6,12 +6,13 @@ from pages.all_pages import all_pages as pages
 
 initialize_session()
 
-if "logged_in" in st.session_state and st.session_state.logged_in: 
+if st.session_state.logged_in: 
     # print(f"Answer Count for {user_id} --> {answered_count}")
     # If the user name is admin
     if st.session_state.user.email == st.secrets["admin_user"]["admin_user"]:
         # Normal experimental flow for admin user
         nav_list = [
+                # Default page 
                 pages["welcome"],
                 # Access to the sign up page
                 pages["signup"],
@@ -39,6 +40,7 @@ if "logged_in" in st.session_state and st.session_state.logged_in:
         # If work is not completed
         elif not is_completed:
             nav_list = [
+                # Default Page
                 pages["welcome"],
                 pages["pre_treatment_survey"],
                 pages["stage_1"],
@@ -53,7 +55,7 @@ if "logged_in" in st.session_state and st.session_state.logged_in:
                 pages["completion"]
             ]
 else:
-    # Not logged in
+    # Not logged in is the default page
     nav_list = [pages["login"]]
 
 page = st.navigation(nav_list)

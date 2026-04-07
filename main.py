@@ -14,7 +14,7 @@ if st.session_state.logged_in:
         nav_list = [
                 # Default page 
                 pages["welcome"],
-                # Access to the sign up page
+                # Access to the sign-up page
                 pages["signup"],
                 pages["pre_treatment_survey"],
                 pages["stage_1"],

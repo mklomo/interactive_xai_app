@@ -5,6 +5,7 @@ from backend.utils import initialize_session
 
 
 initialize_session()
+    
 
 with st.container(border=True):
     st.title("Log in", text_alignment="center")
@@ -12,14 +13,14 @@ with st.container(border=True):
     # Your Email
     email = st.text_input(
         "Please enter your UNCG email",
-        key="login_email"
+        key="login_page_email"
     ).strip().lower()
 
     password = email
 
     col1, col2, col3 = st.columns(3)
     with col2:
-        if st.button("Log in", use_container_width=True):
+        if st.button("Log in", use_container_width=True, key="login_page_button"):
             if not email or not password:
                 st.error("Please enter your UNCG Email")
                 st.stop()

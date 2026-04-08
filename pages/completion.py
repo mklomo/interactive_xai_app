@@ -65,33 +65,10 @@ def main():
     st.balloons()
     thank_you_content()
 
-    # # Initialize flag
-    # if "post_survey_completed" not in st.session_state:
-    #     st.session_state.post_survey_completed = False
-
     # # Centered column for clean stacked buttons
     col1, col2, col3 = st.columns([1, 2, 1])
     
     with col2:
-    #     # === 1. FINAL SURVEY SECTION ===
-    #     if not st.session_state.post_survey_completed:
-    #         # Step A: Click to reveal the actual link
-    #         if st.button("Step 1: Start Final Survey", use_container_width=True):
-    #             st.session_state.post_survey_completed = True
-    #             st.rerun()
-    #     else:
-    #         # Step B: Show the actual Qualtrics link button
-    #         st.info("Final Survey Link Active 👇")
-    #         st.link_button(
-    #             label="Open Final Survey 🔗",
-    #             url="https://uncg.qualtrics.com/jfe/form/SV_5jLpOaEaNXiUr3w",
-    #             width="stretch"
-    #         )
-    #         # st.success("✅ Survey opened! Please return here to log out after finishing.")
-
-        # --- Log Out Section ---
-        # st.markdown("---")
-
         # === 2. LOG OUT BUTTON ===
         if st.button(
             "🚪 Log Out & Finish",
@@ -109,11 +86,6 @@ def main():
             
             # Go back to login
             st.switch_page(pages["login"])
-        # # Dynamic Caption for the Log Out button
-        # if not st.session_state.post_survey_completed:
-        #     st.caption("🔒 Complete the final survey to unlock the Log Out button.", text_alignment="center")
-        # else:
-        #     st.caption("✅ Final mission step authorized. You may now log out.", text_alignment="center")
 
     # Footer note
     st.markdown(

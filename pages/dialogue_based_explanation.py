@@ -433,8 +433,8 @@ def render_chat_interface(current: int, stage_2_df, hub, show_input: bool, saved
     user_query_count = sum(1 for msg in st.session_state.stage_2_chat_messages[current] if msg["role"] == "user")
     
     # Display a helpful counter if they haven't reached the limit
-    if user_query_count < 2 and show_input:
-        st.info(f"Please ask at least {2 - user_query_count} question(s) about the review agent's decision to unlock the Final Decision.")
+    if user_query_count < 1 and show_input:
+        st.info(f"Please ask at least 1 question about the review agent's decision to unlock the Final Decision.")
 
     chat_container = st.container(border=True, height=400)
     
@@ -512,7 +512,7 @@ def render_chat_interface(current: int, stage_2_df, hub, show_input: bool, saved
                     res = run_agent(user_query=prompt, review_df=stage_2_df.iloc[[current]])
                     explanation = res[-1].get("content", "No response from agent.")
                 except Exception as e:
-                    explanation = f"Error contacting agent: {str(e)}"
+                    explanation = f"Error contacting agent: {str(e)}. Please ask your question again"
             
             # Add assistant message
             st.session_state.stage_2_chat_messages[current].append(
@@ -697,14 +697,14 @@ def handle_navigation(current: int, total: int, sub_step: str, answers: dict, re
     elif sub_step == "agent":
         col1, col2, col3 = st.columns(3)
         with col2:
-            # Disable the button if count < 2
-            can_proceed = query_count >= 2
+            # Disable the button if count < 1
+            can_proceed = query_count >= 1
             if st.button("Proceed to Final Decision →", width="stretch", disabled=not can_proceed):
                 st.session_state.stage_2_sub_step[current] = "final"
                 st.session_state.scroll_to_top_next_review = False
                 st.rerun()
             if not can_proceed:
-                st.caption("🔒 Ask 2 questions to unlock", text_alignment="center")
+                st.caption("🔒 Ask atleast 1 question of the 🤖Review Agent to unlock", text_alignment="center")
                 
     elif sub_step == "final":
         col1, col2 = st.columns(2)

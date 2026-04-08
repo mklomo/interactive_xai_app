@@ -1,5 +1,0 @@
-LOGIN = ":material/login:"
-SIGNUP = ":material/person_add:"
-HOME = ":material/home:"
-LOGOUT = ":material/logout:"
-QUIZ = ":material/quiz:"

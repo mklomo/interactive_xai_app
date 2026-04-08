@@ -58,7 +58,15 @@ if st.session_state.logged_in:
 else:
     # Not logged in is the default page
     nav_list = [pages["login"]]
+# --- ADD THIS RIGHT BEFORE st.navigation(nav_list) ---
 
+for i, pg in enumerate(nav_list):
+    # This reaches into the Page object to ensure only index 0 is the default
+    pg._default = (i == 0) 
+# ----------------------------------------------------
+
+page = st.navigation(nav_list)
+page.run()
 page = st.navigation(nav_list)
 # print(nav_list)
 page.run()

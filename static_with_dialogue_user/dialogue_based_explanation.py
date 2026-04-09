@@ -10,7 +10,6 @@ import json
 from streamlit_scroll_to_top import scroll_to_here
 from typing import Optional, Dict
 from backend.response import Response
-from pages.all_pages import all_pages as pages
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -760,7 +759,7 @@ def main():
     if current >= total:
         st.success("Stage 2 completed successfully! 🎉. Please proceed to Stage 3")
         if st.button("Proceed to Stage 3"): 
-            st.switch_page(pages["stage_3_intro"])
+            st.switch_page("stage_3_intro.py")
         st.stop()
 
     row = stage_2_df.iloc[current]

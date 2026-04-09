@@ -1,5 +1,4 @@
 import streamlit as st
-from pages.all_pages import all_pages as pages
 
 
 
@@ -81,9 +80,6 @@ def explanation_condition():
         # Recommendation + Dialogue
         elif mod == 3:
             extra_item = "<li>You you also have access to dialogue with the review agent through a chat interface to ask further questions about its recommendation (see tutorial below)</li>"
-        # # Recommendation + Dialogue
-        # elif mod == 4:
-        #     extra_item = "<li>You will also receive an explanation of the review agent's recommendation. This explanation reveals the rationale behind the review agent's recommendations based on the features of the review (more on this at Stage 2)</li>"
         # Baseline 
         else:
             extra_item = ""
@@ -102,9 +98,6 @@ def tutorial_condition():
         elif mod == 3:
             # Tutorial Link 3 - # Recommendation + Dialogue
             tutorial = "https://youtu.be/GPTYACS6gqk"
-        # elif mod == 4:
-        #     # Tutorial Link 4 - # NL Explanation
-        #     tutorial = "https://youtu.be/GPTYACS6gqk"
         # Baseline
         else:
             # Tutorial Link 5
@@ -148,7 +141,7 @@ def page_text():
 
 
 
-def navigation():
+def page_navigation():
     # Display tutorials
     tutorial_link = tutorial_condition()
     # print(f"Tutorial Link --> {tutorial_link}")
@@ -160,17 +153,7 @@ def navigation():
     col_1, col_2, col_3 = st.columns([1, 1, 1])  # Adjust the ratios as needed
     with col_2:    
         if st.button("Proceed to Stage 2", width="stretch"):
-            mod = st.session_state.user_id % 4
-            if mod == 1:
-                st.switch_page(pages["stage_2_static_explanation"])
-            elif mod == 2:
-                st.switch_page(pages["stage_2_dialogue_based_explanation"])  
-            elif mod == 3:
-                st.switch_page(pages["stage_2_dialogue_based_explanation_2"])
-            # elif mod == 4:
-            #     st.switch_page(pages["stage_2_nat_lang_explanation"])
-            else:
-                st.switch_page(pages["stage_2_baseline"])
+            st.switch_page("baseline_user/stage_2_baseline.py")
                 
 
 def main():
@@ -179,7 +162,7 @@ def main():
     # Page text
     page_text()
     # Page Nav
-    navigation()
+    page_navigation()
 
 if __name__ == "__main__":
     main()

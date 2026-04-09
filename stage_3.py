@@ -2,7 +2,6 @@ import streamlit as st
 from streamlit_scroll_to_top import scroll_to_here
 from typing import Dict, Optional
 from backend.filter_data import filter_data
-from pages.all_pages import all_pages as pages
 from backend.response import Response
 
 
@@ -228,7 +227,7 @@ def handle_navigation(current: int, total: int, answers: dict, review_id: int, h
                 st.rerun()
         else:
             if st.button("Back to Stage 3 Intro", width="stretch"):
-                st.switch_page(pages["stage_3_intro"])
+                st.switch_page("stage_3_intro.py")
 
     with col2:
         label = "Finish Stage 3 & Submit" if current == total - 1 else "Next Review →"
@@ -271,7 +270,7 @@ def main():
         col1, col2, col3 = st.columns([1, 2, 1])
         with col2:
             if st.button("Proceed to Game Completion Page", width="stretch"):
-                st.switch_page(pages["post_treatment_survey"])
+                st.switch_page("post_treatment_survey.py")
         st.stop()
 
     # Display review and questions

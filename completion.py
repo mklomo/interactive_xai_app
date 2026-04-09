@@ -1,5 +1,4 @@
 import streamlit as st
-from pages.all_pages import all_pages as pages
 
 def setup_page():
     st.set_page_config(
@@ -7,7 +6,6 @@ def setup_page():
         layout="wide",
         initial_sidebar_state="collapsed"
     )
-    
     st.markdown(
         """
         <style>
@@ -67,25 +65,18 @@ def main():
 
     # # Centered column for clean stacked buttons
     col1, col2, col3 = st.columns([1, 2, 1])
-    
     with col2:
-        # === 2. LOG OUT BUTTON ===
-        if st.button(
-            "🚪 Log Out & Finish",
-            type="primary",
-            width="stretch",
-            # disabled=(not st.session_state.post_survey_completed)
-        ):
-            # Clear session state
+        if st.button("🚪 Log Out & Finish", type="primary", use_container_width=True):
+            # 1. Clear the state (keeping the DB hub if necessary)
             for key in list(st.session_state.keys()):     
-                if key != "hub": # Keep hub if necessary for your routing
+                if key not in ["hub"]: 
                     del st.session_state[key]
-
-            # Reset login flags explicitly
+    
+            # 2. Explicitly ensure logged_in is False
             st.session_state.logged_in = False
             
-            # Go back to login
-            st.switch_page(pages["login"])
+            # 3. Rerun to trigger main.py logic
+            st.rerun()
 
     # Footer note
     st.markdown(

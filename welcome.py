@@ -1,5 +1,4 @@
 import streamlit as st
-from pages.all_pages import all_pages as pages
 from typing import Dict, Optional
 
 
@@ -10,72 +9,72 @@ def setup_page():
         initial_sidebar_state="collapsed"
     )
     st.markdown(
-        """
-        <style>
-            /* 1. FORCE the container to fill the full width of the column */
-            /* This overrides the 'fit-content' you see in your HTML */
-            [data-testid="stElementContainer"] {
-                width: 100% !important;
-            }
-
-            /* 2. Center the radio widget itself */
-            [data-testid="stRadio"] {
-                display: flex !important;
-                flex-direction: column !important;
-                align-items: center !important;
-                width: 100% !important;
-            }
-
-            /* 3. Center the 'Genuine' and 'Deceptive' buttons horizontally */
-            [data-testid="stRadio"] > div[role="radiogroup"] {
-                display: flex !important;
-                justify-content: center !important;
-                gap: 3rem !important;
-                width: 100% !important;
-            }
-
-            /* 4. OVERRIDE your global 'justify' rule for the radio text */
-            [data-testid="stRadio"] [data-testid="stMarkdownContainer"] p {
-                text-align: center !important;
-                margin: 0 !important;
-            }
-
-            /* 5. Hide the 'Decision' label and its extra spacing */
-            [data-testid="stWidgetLabel"] {
-                display: none !important;
-            }
-
-            /* Slider Styling */
-            div[data-testid="stSlider"] {
-                margin: 1.5rem auto;
-                width: 75%;
-            }
-
-            /* Button Styling */
-            .stButton > button {
-                width: 100%;
-                max-width: 420px;
-                height: 3.2rem;
-                font-size: 1.25rem !important;
-                font-weight: 600;
-                margin: 1.2rem auto;
-                display: block;
-            }
-
-            /* Headings and Paragraphs */
-            h1, h2, h3, h4 {
-                text-align: center;
-                margin-bottom: 1.2rem;
-            }
-            .main p {
-                font-size: 1.15rem;
-                margin: 1.1rem auto;
-                text-align: justify;
-            }
-        </style>
-        """,
-        unsafe_allow_html=True
-    )
+            """
+            <style>
+                /* 1. FORCE the container to fill the full width of the column */
+                /* This overrides the 'fit-content' you see in your HTML */
+                [data-testid="stElementContainer"] {
+                    width: 100% !important;
+                }
+    
+                /* 2. Center the radio widget itself */
+                [data-testid="stRadio"] {
+                    display: flex !important;
+                    flex-direction: column !important;
+                    align-items: center !important;
+                    width: 100% !important;
+                }
+    
+                /* 3. Center the 'Genuine' and 'Deceptive' buttons horizontally */
+                [data-testid="stRadio"] > div[role="radiogroup"] {
+                    display: flex !important;
+                    justify-content: center !important;
+                    gap: 3rem !important;
+                    width: 100% !important;
+                }
+    
+                /* 4. OVERRIDE your global 'justify' rule for the radio text */
+                [data-testid="stRadio"] [data-testid="stMarkdownContainer"] p {
+                    text-align: center !important;
+                    margin: 0 !important;
+                }
+    
+                /* 5. Hide the 'Decision' label and its extra spacing */
+                [data-testid="stWidgetLabel"] {
+                    display: none !important;
+                }
+    
+                /* Slider Styling */
+                div[data-testid="stSlider"] {
+                    margin: 1.5rem auto;
+                    width: 75%;
+                }
+    
+                /* Button Styling */
+                .stButton > button {
+                    width: 100%;
+                    max-width: 420px;
+                    height: 3.2rem;
+                    font-size: 1.25rem !important;
+                    font-weight: 600;
+                    margin: 1.2rem auto;
+                    display: block;
+                }
+    
+                /* Headings and Paragraphs */
+                h1, h2, h3, h4 {
+                    text-align: center;
+                    margin-bottom: 1.2rem;
+                }
+                .main p {
+                    font-size: 1.15rem;
+                    margin: 1.1rem auto;
+                    text-align: justify;
+                }
+            </style>
+            """,
+            unsafe_allow_html=True
+        )
 
 
 def explanation_condition():
@@ -91,10 +90,6 @@ def explanation_condition():
         # Recommendation + Dialogue
         elif mod == 3:
             extra_item = "<li>You you also have access to dialogue with the review agent through a chat interface to ask further questions about its recommendation (more on this at Stage 2)</li>"
-        # # Recommendation + Dialogue
-        # elif mod == 4:
-        #     extra_item = "<li>You will also receive an explanation of the review agent's recommendation. This explanation reveals the rationale behind the review agent's recommendations based on the features of the review (more on this at Stage 2)</li>"
-        # Baseline 
         else:
             extra_item = ""
     return extra_item
@@ -169,13 +164,13 @@ def main():
         if st.button("Open Pre-Study Survey", 
                   width="stretch", 
                 ):
-            st.switch_page(pages["pre_treatment_survey"])
+            st.switch_page("pre_treatment_survey.py")
 
         if st.session_state.user.email == st.secrets["admin_user"]["admin_user"]:
             if st.button("Create New User", 
                   width="stretch", 
                 ):
-                st.switch_page(pages["signup"])
+                st.switch_page("admin/signup.py")
             
         
 

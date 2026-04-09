@@ -572,7 +572,7 @@ def main():
         col1, col2, col3 = st.columns([1, 2, 1])
         with col2:
             if st.button("Proceed to Stage 3", width="stretch"):
-                st.switch_page("pages/stage_3_intro.py")
+                st.switch_page("stage_3_intro.py")
         st.stop()
 
     row = stage_2_df.iloc[current]

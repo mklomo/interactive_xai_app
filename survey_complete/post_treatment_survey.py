@@ -1,5 +1,4 @@
 import streamlit as st
-from pages.all_pages import all_pages as pages
 import streamlit.components.v1 as components
 
 def setup_page():
@@ -42,13 +41,13 @@ def setup_page():
 def main():
     setup_page() # Your existing CSS/Config
 
-    st.markdown("<h1>Please Complete the Survey</h1>", unsafe_allow_html=True)
+    st.markdown("<h1>Well done for finishing Stage 3! Please Complete the Survey</h1>", unsafe_allow_html=True)
 
     # 1. The Survey Iframe (Clean and simple)
     _, center_content, _ = st.columns([1, 10, 1])
     with center_content:
         components.iframe(
-            "https://uncg.qualtrics.com/jfe/form/SV_eUUKUUSlA5Cm086", 
+            "https://uncg.qualtrics.com/jfe/form/SV_5jLpOaEaNXiUr3w", 
             height=800, 
             scrolling=True
         )
@@ -58,7 +57,7 @@ def main():
     # 2. The Verification Logic
     _, col2, _ = st.columns([1, 2, 1])
     with col2:
-        st.subheader("Proceed To Stage 1")
+        st.subheader("Proceed To Completion Page")
         
         # User enters the code they saw at the end of Qualtrics
         st.markdown(
@@ -72,26 +71,25 @@ def main():
         )
 
         # Set Survey Complete to False
-        st.session_state.pre_treatment_survey_completed = False
+        st.session_state.post_treatment_survey_completed = False
         
         # Check if the code matches (Case-insensitive)
-        if access_code.strip().upper() == "HUNTER-2026":
-            st.session_state.pre_treatment_survey_completed = True
+        if access_code.strip().upper() == "HUNTER-DONE-2026":
+            st.session_state.post_treatment_survey_completed = True
             st.success("✅ Code Verified! You may now proceed.")
         elif access_code:
             st.error("❌ Incorrect code. Please finish the survey to see the code.")
 
         # The Proceed Button
-        if st.button("Proceed to Stage 1", 
+        if st.button("Completion Page", 
                      use_container_width=True, 
                      type="primary",
-                     disabled=not st.session_state.get('pre_treatment_survey_completed', False)):
-            st.switch_page(pages["stage_1"])
+                     disabled=not st.session_state.get('post_treatment_survey_completed', False)):
+            st.switch_page("survey_complete/completion.py")
 
         # Caption
-        if not st.session_state.pre_treatment_survey_completed:
+        if not st.session_state.post_treatment_survey_completed:
             st.caption("🔒 Complete the survey to unlock", text_alignment="center")
-        
 
 if __name__ == "__main__":
     main()

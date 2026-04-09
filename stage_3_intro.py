@@ -96,7 +96,7 @@ def main():
     col1, col2, col3 = st.columns([1, 1, 1]) # Adjust the ratios as needed
     with col2:
         if st.button("Start Stage 3", width="stretch"):
-            st.switch_page("pages/stage_3.py")
+            st.switch_page("stage_3.py")
 
 
 if __name__ == "__main__":

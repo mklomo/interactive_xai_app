@@ -1,5 +1,4 @@
 import streamlit as st
-from pages.all_pages import all_pages as pages
 import streamlit.components.v1 as components
 
 def setup_page():
@@ -86,7 +85,7 @@ def main():
                      use_container_width=True, 
                      type="primary",
                      disabled=not st.session_state.get('post_treatment_survey_completed', False)):
-            st.switch_page(pages["completion"])
+            st.switch_page("completion.py")
 
         # Caption
         if not st.session_state.post_treatment_survey_completed:

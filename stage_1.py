@@ -2,7 +2,6 @@ import streamlit as st
 from streamlit_scroll_to_top import scroll_to_here
 from typing import Dict, Optional
 from backend.filter_data import filter_data
-from pages.all_pages import all_pages as pages
 from backend.response import Response
 
 
@@ -225,7 +224,7 @@ def handle_navigation(current: int, total: int, answers: dict, review_id: int, h
                 st.rerun()
         else:
             if st.button("Back to Introduction", width="stretch"):
-                st.switch_page(pages["welcome"])
+                st.switch_page("welcome.py")
 
     with col2:
         label = "Finish Stage 1 & Submit" if current == total - 1 else "Next Review →"
@@ -264,8 +263,30 @@ def main():
         st.success("Stage 1 completed successfully. Please proceed to Stage 2 by clicking the button below")
         col1, col2, col3 = st.columns([1, 2, 1])
         with col2:
-            if st.button("Proceed to Stage 2", width="stretch"):
-                st.switch_page(pages["stage_2_intro"])
+            # Check if admin
+            if st.session_state.role == "ADMIN":
+                # All options
+                if st.button("Proceed to Stage 2 - Static Exp", width="stretch"):
+                    st.switch_page("static_exp_user/stage_2_static_exp_intro.py")
+                if st.button("Proceed to Stage 2 - Static Exp with Dialogue", width="stretch"):
+                    st.switch_page("static_with_dialogue_user/stage_2_stat_with_dialogue_intro.py")
+                if st.button("Proceed to Stage 2 - Dialogue", width="stretch"):
+                    st.switch_page("dialogue_user/stage_2_dialogue_intro.py")
+                if st.button("Proceed to Stage 2 - Baseline", width="stretch"):
+                    st.switch_page("baseline_user/stage_2_baseline_intro.py")
+            
+            # For other roles
+            else:
+                if st.button("Proceed to Stage 2", width="stretch"):
+                    mod = st.session_state.user_id % 4
+                    if mod == 1:
+                        st.switch_page("static_exp_user/stage_2_static_exp_intro.py")
+                    elif mod == 2:    
+                        st.switch_page("static_with_dialogue_user/stage_2_stat_with_dialogue_intro.py")
+                    elif mod == 3:
+                        st.switch_page("dialogue_user/stage_2_dialogue_intro.py")     
+                    else:    
+                        st.switch_page("baseline_user/stage_2_baseline_intro.py")
         st.stop()
 
     row = stage_1_df.iloc[current]

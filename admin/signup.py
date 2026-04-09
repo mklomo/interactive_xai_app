@@ -1,6 +1,6 @@
 import streamlit as st
 from backend.hub import Hub
-from pages.all_pages import all_pages as pages
+
 
 
 
@@ -27,4 +27,4 @@ with st.container(border=True):
                 st.error("Please enter valid email or password")
             
 # Link to the Login Page
-st.page_link(pages["welcome"], label="Return to the Welcome page!")               
+st.page_link("welcome.py", label="Return to the Welcome page!")               

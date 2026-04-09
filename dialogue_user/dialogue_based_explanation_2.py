@@ -1,16 +1,20 @@
 import streamlit as st
-from streamlit_scroll_to_top import scroll_to_here
-from typing import Dict, Optional
-import altair as alt
-import pandas as pd
-import numpy as np
-from backend.filter_data import filter_data, filter_explanations
+from backend.filter_data import filter_data
 from backend.static_exp import get_static_explanation_data, clean_feature_names, get_feature_df
+from backend.agentic_rag import run_agent
+import pandas as pd
+import altair as alt
+from altair import datum
+import numpy as np
+import json
+from streamlit_scroll_to_top import scroll_to_here
+from typing import Optional, Dict
 from backend.response import Response
-import markdown
+
+
 
 # ──────────────────────────────────────────────────────────────────────────────
-#                           PAGE SETUP & SCROLL
+#                            PAGE SETUP & SCROLL
 # ──────────────────────────────────────────────────────────────────────────────
 
 def setup_page():
@@ -53,7 +57,7 @@ def setup_page():
                 font-size: 1.5rem !important;  
             }
             [data-testid="stSliderThumbValue"] {
-                font-size: 1.5rem !important;  /* Optional: Also increase thumb value size if desired */
+                font-size: 1.5rem !important;
             }
             .stButton > button {
                 width: 100%;
@@ -78,7 +82,6 @@ def setup_page():
         unsafe_allow_html=True
     )
 
-
 def scroll_to_top():
     if st.session_state.get("scroll_to_top_next_review", False):
         scroll_to_here(0, key="top_scroll")
@@ -91,18 +94,18 @@ def scroll_to_top():
 def initialize_session_state(df):
     if "scroll_to_top_next_review" not in st.session_state:
         st.session_state.scroll_to_top_next_review = False
-        
-    # Initialize the current session
+
     if "stage_2_current_review" not in st.session_state:
         st.session_state.stage_2_current_review = 0
-    # Create answers 
+    
     if "stage_2_answers" not in st.session_state:
         st.session_state.stage_2_answers = [{} for _ in range(len(df))]
-    # Create the sub-step
+        
     if "stage_2_sub_step" not in st.session_state:
         st.session_state.stage_2_sub_step = ["initial"] * len(df)
-
     
+    if "stage_2_chat_messages" not in st.session_state:
+        st.session_state.stage_2_chat_messages = {}
 
 # ──────────────────────────────────────────────────────────────────────────────
 #                               UI COMPONENTS
@@ -120,9 +123,7 @@ def display_review(review_text: str, current: int, total: int):
         """,
         unsafe_allow_html=True
     )
-    
 
-    
 def render_initial_questions(current: int, saved: dict):
     st.markdown("<h3>Is this review ✅ Genuine or ❌ Deceptive?</h3>", unsafe_allow_html=True)
     col_left, col_center, col_right = st.columns([2, 1, 2])
@@ -133,6 +134,7 @@ def render_initial_questions(current: int, saved: dict):
             preselected = 0
         elif saved.get("initial_decision") == "Deceptive":
             preselected = 1
+            
         raw_decision = st.radio(
             label="Initial Decision",
             options=decision_options,
@@ -143,24 +145,19 @@ def render_initial_questions(current: int, saved: dict):
         )
         decision = raw_decision.split("[")[1].split("]")[0] if raw_decision else None
 
-    # Certainty
     st.markdown("<h3>How certain are you in your decision? (1 = Very uncertain, 7 = Very certain)</h3>", unsafe_allow_html=True)
     certainty = st.slider(
-        "Certainty", 0, 7,
-        # Default to 0
-        value=saved.get("initial_certainty", 0),
-        label_visibility="hidden",
-        key=f"stage_2_init_cert_{current}"
-    )
+        "Certainty", 
+        0, 7, 
+        value=saved.get("initial_certainty", 0), 
+        key=f"stage_2_init_cert_{current}")
 
     st.markdown("<h3>If you were booking a trip right now, how likely would you choose this hotel? (1 = Not at all, 7 = Very likely)</h3>", unsafe_allow_html=True)
     likelihood = st.slider(
-        "Likelihood", 0, 7,
-        # Default 0
-        value=saved.get("initial_likelihood", 0),
-        label_visibility="hidden",
-        key=f"stage_2_init_like_{current}"
-    )
+        "Likelihood", 
+        0, 7, 
+        value=saved.get("initial_likelihood", 0), 
+        key=f"stage_2_init_like_{current}")
 
     return {
         "initial_decision": decision,
@@ -168,10 +165,7 @@ def render_initial_questions(current: int, saved: dict):
         "initial_likelihood": likelihood
     }
 
-
-
-
-def render_agent_recommendation(current: int, stage_2_df, explanation_text: str):
+def render_agent_recommendation(current: int, stage_2_df):
     st.subheader("About Review")
     feature_imp_dict = get_static_explanation_data(df=stage_2_df.iloc[[current]])
     chart_data = clean_feature_names(feature_imp_dict)
@@ -355,69 +349,151 @@ def render_agent_recommendation(current: int, stage_2_df, explanation_text: str)
         unsafe_allow_html=True
     )
 
-    st.markdown("""<h3><br>Explanation</h3>""", unsafe_allow_html=True)
-    # ←←← NEW: Convert Markdown to HTML so **bold**, etc. renders correctly
-    html_explanation = markdown.markdown(
-        explanation_text,
-        extensions=['tables', 'fenced_code', 'nl2br']  # keeps formatting clean
-    )
-    st.markdown(
-        f"""
-        <div style="border: 1px solid #ddd; padding: 15px; border-radius: 8px; background-color: #0E1117; font-size: 25px; color: white;">
-            {html_explanation}
-        </div>
-        <div style="margin-bottom: 20px;"></div>
-        """,
-        unsafe_allow_html=True
-    )
+    
+
+    
+
+def render_chat_interface(current: int, stage_2_df, hub, show_input: bool, saved_chat_log=None):
+    st.markdown("<h3>Ask the 🤖Review Agent questions about its recommendation</h3>", unsafe_allow_html=True)
+   
+    with st.expander("💡 Suggested Questions", expanded=False):
+        st.write("- Why is this review classified as deceptive/Genuine?\n- What specific words in the review influenced the recommendation?\n- How does [a given feature] influence the agent's decision?\n- What are the most important features influencing the current recommendation?\n- Which sequence of steps led to the current recommendation?")
+    
+    # Load chat history from DB if session state is empty for this review
+    if current not in st.session_state.stage_2_chat_messages or not st.session_state.stage_2_chat_messages[current]:
+        st.session_state.stage_2_chat_messages[current] = saved_chat_log or []
+    
+    # Calculate query count
+    user_query_count = sum(1 for msg in st.session_state.stage_2_chat_messages[current] if msg["role"] == "user")
+    
+    # Display a helpful counter if they haven't reached the limit
+    if user_query_count < 1 and show_input:
+        st.info(f"Please ask at least 1 question about the review agent's decision to unlock the Final Decision.")
+
+    chat_container = st.container(border=True, height=400)
+    
+    with chat_container:
+        for msg in st.session_state.stage_2_chat_messages[current]:
+            with st.chat_message(msg["role"]):
+                st.markdown(msg["content"])
+    
+    # ── Only show input area when in 'agent' sub-step ────────────────────
+    if show_input:
+        # Custom styling to make chat_input look like it's inside the container
+        st.markdown(
+            """
+            <style>
+                /* Target the specific chat input for this review */
+                div[data-testid="stChatInput"][key^="chat_input_"] {
+                    max-width: 100% !important;
+                    margin: -1px 0 0 0 !important;
+                    padding: 0 !important;
+                    border-top: none !important;
+                    border-radius: 0 0 8px 8px !important;
+                    background-color: #0E1117 !important;
+                    border: 1px solid #ddd !important;
+                    border-top: none !important;
+                    box-sizing: border-box !important;
+                }
+                
+                /* Input area styling */
+                div[data-testid="stChatInput"] textarea {
+                    color: white !important;
+                    background-color: transparent !important;
+                    border: none !important;
+                    font-size: 16px !important;
+                    padding: 12px 16px !important;
+                    resize: none !important;
+                }
+                
+                /* Placeholder styling */
+                div[data-testid="stChatInput"] textarea::placeholder {
+                    color: #888 !important;
+                }
+                
+                /* Remove default bottom padding/margin */
+                section[data-testid="stChatInputRoot"] {
+                    margin-bottom: 0 !important;
+                    padding-bottom: 0 !important;
+                }
+                
+                /* Hide label completely */
+                div[data-testid="stChatInput"] label {
+                    display: none !important;
+                }
+            </style>
+            """,
+            unsafe_allow_html=True
+        )
         
+        # The actual input – key is unique per review
+        prompt = st.chat_input(
+            placeholder="Ask a question about the agent's recommendation...",
+            key=f"chat_input_{current}"
+        )
+        
+        if prompt and prompt.strip():
+            # Add user message
+            st.session_state.stage_2_chat_messages[current].append(
+                {"role": "user", "content": prompt}
+            )
+            review_id = int(stage_2_df.iloc[current]["review_id"])
+            save_chat_log(review_id, "user", prompt, hub)
+            
+            # Generate agent response
+            with st.spinner("🤖Review Agent is thinking..."):
+                try:
+                    res = run_agent(user_query=prompt, review_df=stage_2_df.iloc[[current]])
+                    explanation = res[-1].get("content", "No response from agent.")
+                except Exception as e:
+                    explanation = f"Error contacting agent: {str(e)}. Please ask your question again"
+            
+            # Add assistant message
+            st.session_state.stage_2_chat_messages[current].append(
+                {"role": "assistant", "content": explanation}
+            )
+            save_chat_log(review_id, "assistant", explanation, hub)
+            
+            # Force rerun to show new messages + clear input
+            st.rerun()
 
-
+    return user_query_count
 
 def render_final_questions(current: int, saved: dict):
     st.markdown("<h3>What is your final decision?</h3>", unsafe_allow_html=True)
     col_left, col_center, col_right = st.columns([2, 1, 2])
     with col_center:
         decision_options = [":green[Genuine]", ":red[Deceptive]"]
-        preselected = None
-        if saved.get("final_decision") == "Genuine":
-            preselected = 0
-        elif saved.get("final_decision") == "Deceptive":
-            preselected = 1
+        preselected = 0 if saved.get("final_decision") == "Genuine" else (1 if saved.get("final_decision") == "Deceptive" else None)
+        
         raw_decision = st.radio(
-            label="Final Decision",
-            options=decision_options,
+            label="Final Decision", 
+            options=decision_options, 
             index=preselected,
-            horizontal=True,
-            label_visibility="hidden",
+            horizontal=True, 
+            label_visibility="hidden", 
             key=f"stage_2_final_dec_{current}"
         )
         decision = raw_decision.split("[")[1].split("]")[0] if raw_decision else None
 
     st.markdown("<h3>How certain are you in your final decision? (1 = Very uncertain, 7 = Very certain)</h3>", unsafe_allow_html=True)
     certainty = st.slider(
-        "Final Certainty", 0, 7,
-        value=saved.get("final_certainty", 0),
-        label_visibility="hidden",
-        key=f"stage_2_final_cert_{current}"
-    )
+        "Final Certainty", 
+        0, 7, 
+        value=saved.get("final_certainty", 0), 
+        key=f"stage_2_final_cert_{current}")
 
     st.markdown("<h3>If you were booking a trip right now, how likely would you choose this hotel? (1 = Not at all, 7 = Very likely)</h3>", unsafe_allow_html=True)
     likelihood = st.slider(
-        "Final Likelihood", 0, 7,
-        value=saved.get("final_likelihood", 0),
-        label_visibility="hidden",
-        key=f"stage_2_final_like_{current}"
-    )
+        "Final Likelihood", 
+        0, 7, value=saved.get("final_likelihood", 0), 
+        key=f"stage_2_final_like_{current}")
 
     st.markdown("<h3>How much did the agent's recommendation influence your final decision? (1 = Not at all, 7 = Very much)</h3>", unsafe_allow_html=True)
     influence = st.slider(
-        "Influence", 0, 7,
-        value=saved.get("influence_rating", 0),
-        label_visibility="hidden",
-        key=f"stage_2_influence_{current}"
-    )
-
+        "Influence", 0, 7, 
+        value=saved.get("influence_rating", 0), 
+        key=f"stage_2_influence_{current}")
     saved_initial = saved.get("initial_decision")
     if decision is None:
         label = "Please describe how the agent's recommendation informed your final decision [OPTIONAL]"
@@ -444,53 +520,64 @@ def render_final_questions(current: int, saved: dict):
     }
 
 # ──────────────────────────────────────────────────────────────────────────────
-#                             DATABASE FUNCTIONS
+#                            DATABASE FUNCTIONS
 # ──────────────────────────────────────────────────────────────────────────────
+
+def save_chat_log(review_id: int, role: str, content: str, hub):
+    """Fixed logic: Fetches, mutates, and updates the Response object."""
+    user_id = st.session_state.user_id
+    existing_id = hub.response_service.get_response_id(user_id=user_id, review_id=review_id)
+    
+    if existing_id:
+        obj = hub.response_service.get_response(existing_id)
+        current_log = []
+        if obj.verification_queries_and_responses:
+            try:
+                current_log = json.loads(obj.verification_queries_and_responses)
+            except Exception:
+                current_log = []
+        
+        current_log.append({"role": role, "content": content})
+        obj.verification_queries_and_responses = json.dumps(current_log)
+        hub.response_service.update_response(existing_id, obj)
 
 def get_response(user_id: str, review_id: int, response_service) -> Optional[Dict]:
     existing_id = response_service.get_response_id(user_id=user_id, review_id=review_id)
-    if not existing_id:
-        return None
-
-    obj: Response = response_service.get_response(existing_id)
-    if not obj:
-        return None
-
-    saved = {}
-    if obj.initial_decision:
-        saved["initial_decision"] = obj.initial_decision
-    if obj.initial_certainty_rating is not None:
-        saved["initial_certainty"] = obj.initial_certainty_rating
-    if obj.initial_persuasion_rating is not None:
-        saved["initial_likelihood"] = obj.initial_persuasion_rating
-
-    if obj.final_decision:
-        saved["final_decision"] = obj.final_decision
-    if obj.final_certainty_rating is not None:
-        saved["final_certainty"] = obj.final_certainty_rating
-    if obj.final_persuasion_rating is not None:
-        saved["final_likelihood"] = obj.final_persuasion_rating
-    if obj.influence_rating is not None:
-        saved["influence_rating"] = obj.influence_rating
-    if obj.decision_making_description:
-        saved["decision_making_description"] = obj.decision_making_description
-
-    print(f"Stage 2 - Loaded from DB: {saved}")
-    return saved if saved else None
+    if not existing_id: return None
+    obj = response_service.get_response(existing_id)
+    if not obj: return None
+    
+    chat_history = []
+    if obj.verification_queries_and_responses:
+        try:
+            chat_history = json.loads(obj.verification_queries_and_responses)
+        except Exception:
+            chat_history = []
+    
+    return {
+        "initial_decision": obj.initial_decision,
+        "initial_certainty": obj.initial_certainty_rating,
+        "initial_likelihood": obj.initial_persuasion_rating,
+        "final_decision": obj.final_decision,
+        "final_certainty": obj.final_certainty_rating,
+        "final_likelihood": obj.final_persuasion_rating,
+        "influence_rating": obj.influence_rating,
+        "decision_making_description": obj.decision_making_description,
+        "chat_history": chat_history
+    }
 
 
 def save_response(review_id: int, answers: dict, hub, is_final: bool = False):
     user_id = st.session_state.user_id
-    existing_id = hub.response_service.get_response_id(user_id=user_id, review_id=review_id)
-
+    existing_id = hub.response_service.get_response_id(user_id=user_id, 
+                                                       review_id=review_id)
     data = {
-        "user_id": user_id,
+        "user_id": user_id, 
         "review_id": review_id,
         "initial_decision": answers.get("initial_decision"),
         "initial_certainty_rating": answers.get("initial_certainty"),
         "initial_persuasion_rating": answers.get("initial_likelihood"),
     }
-
     if is_final:
         data.update({
             "final_decision": answers.get("final_decision"),
@@ -501,20 +588,21 @@ def save_response(review_id: int, answers: dict, hub, is_final: bool = False):
         })
 
     obj = Response(**data)
-
     if existing_id:
+        # Before updating, we must preserve the chat log already in the DB
+        existing_obj = hub.response_service.get_response(existing_id)
+        obj.verification_queries_and_responses = existing_obj.verification_queries_and_responses
         hub.response_service.update_response(existing_id, obj)
     else:
         hub.response_service.create_response(obj)
 
 
-
 # ──────────────────────────────────────────────────────────────────────────────
-#                               NAVIGATION
+#                                NAVIGATION
 # ──────────────────────────────────────────────────────────────────────────────
 
-def handle_navigation(current: int, total: int, sub_step: str, answers: dict, review_id: int, hub):
-
+def handle_navigation(current: int, total: int, sub_step: str, answers: dict, review_id: int, hub, query_count: int = 0):
+    
     if sub_step == "initial":
         col1, col2, col3 = st.columns(3)
         with col1:
@@ -522,12 +610,11 @@ def handle_navigation(current: int, total: int, sub_step: str, answers: dict, re
                 if st.button("← Previous", width="stretch"):
                     st.session_state.stage_2_current_review -= 1
                     st.rerun()
-
         col = col3 if current > 0 else col2
         with col:
             if st.button("Submit Initial Decision → Agent", width="stretch"):
                 if not answers.get("initial_decision"):
-                    st.error("Please select Genuine or Deceptive.")
+                    st.error("Select Genuine/Deceptive.")
                     return
                 if answers.get("initial_certainty", 0) < 1:
                     st.error("Please select certainty level (1–7).")
@@ -535,34 +622,35 @@ def handle_navigation(current: int, total: int, sub_step: str, answers: dict, re
                 if answers.get("initial_likelihood", 0) < 1:
                     st.error("Please select likelihood (1–7).")
                     return
-
                 st.session_state.stage_2_answers[current].update(answers)
                 save_response(review_id, answers, hub, is_final=False)
                 st.session_state.stage_2_sub_step[current] = "agent"
                 st.session_state.scroll_to_top_next_review = False
                 st.rerun()
-
     elif sub_step == "agent":
         col1, col2, col3 = st.columns(3)
         with col2:
-            if st.button("Proceed to Final Decision →", width="stretch"):
+            # Disable the button if count < 1
+            can_proceed = query_count >= 1
+            if st.button("Proceed to Final Decision →", width="stretch", disabled=not can_proceed):
                 st.session_state.stage_2_sub_step[current] = "final"
                 st.session_state.scroll_to_top_next_review = False
                 st.rerun()
-
+            if not can_proceed:
+                st.caption("🔒 Ask atleast 1 question of the 🤖Review Agent to unlock", text_alignment="center")
+                
     elif sub_step == "final":
-        col1, col2 = st.columns(2)
+        col1, col2= st.columns(2)
         with col1:
             if st.button("Back to Agent", width="stretch"):
                 st.session_state.stage_2_sub_step[current] = "agent"
                 st.session_state.scroll_to_top_next_review = False
                 st.rerun()
-
         with col2:
-            label = "Finish Stage 2 & Submit" if current == total - 1 else "Next Review →"
-            if st.button(label, width="stretch"):
+            label = "Finish & Submit" if current == total - 1 else "Next Review →"
+            if st.button(label):
                 if not answers.get("final_decision"):
-                    st.error("Please select final decision.")
+                    st.error("Select final decision.")
                     return
                 if answers.get("final_certainty", 0) < 1:
                     st.error("Please select final certainty (1–7).")
@@ -573,7 +661,6 @@ def handle_navigation(current: int, total: int, sub_step: str, answers: dict, re
                 if answers.get("influence_rating", 0) < 1:
                     st.error("Please select influence level (1–7).")
                     return
-
                 st.session_state.stage_2_answers[current].update(answers)
                 save_response(review_id, answers, hub, is_final=True)
                 st.session_state.stage_2_current_review += 1
@@ -582,60 +669,62 @@ def handle_navigation(current: int, total: int, sub_step: str, answers: dict, re
                     st.session_state.scroll_to_top_next_review = True
                 st.rerun()
 
-
 # ──────────────────────────────────────────────────────────────────────────────
-#                                 MAIN
+#                                   MAIN
 # ──────────────────────────────────────────────────────────────────────────────
 
 def main():
+    if "hub" not in st.session_state:
+        st.error("Session hub not initialized.")
+        st.stop()
     hub = st.session_state.hub
     setup_page()
-    stage_2_df = filter_data(df=st.session_state.reviews_df, stage=2)
-    lang_explanations_df = hub.nat_lang_exp_service.get_explanations()
-    initialize_session_state(stage_2_df)
-    # Reset the scrolling
     scroll_to_top()
+    stage_2_df = filter_data(df=st.session_state.reviews_df, stage=2)
+    initialize_session_state(stage_2_df)
+    
     st.markdown("<h1>Stage 2: Team-Up with 🤖Review Agent 🤝</h1>", unsafe_allow_html=True)
+
     total = len(stage_2_df)
     current = st.session_state.stage_2_current_review
-    # print(f"This is the DF ---> {stage_2_df}")
+
     if current >= total:
-        st.success("Stage 2 completed successfully! 🎉")
-        col1, col2, col3 = st.columns([1, 2, 1])
-        with col2:
-            if st.button("Proceed to Stage 3", width="stretch"):
-                st.switch_page("pages/stage_3_intro.py")
+        st.success("Stage 2 completed successfully! 🎉. Please proceed to Stage 3")
+        if st.button("Proceed to Stage 3"): 
+            st.switch_page("stage_3_intro.py")
         st.stop()
+
     row = stage_2_df.iloc[current]
-    review_text = row["review_text"]
     review_id = int(row["review_id"])
-    explanation_text = filter_explanations(df=lang_explanations_df, review_id=review_id)
-    # print(f" Explanation Text {explantion_text}")
-    # print(f"\n\n Explanation DF {lang_explanations_df}")
-    
 
-    saved_from_db = get_response(
-        user_id=st.session_state.user_id,
-        review_id=review_id,
-        response_service=hub.response_service
-    )
+    saved_from_db = get_response(st.session_state.user_id, review_id, hub.response_service)
     saved_answers = saved_from_db or st.session_state.stage_2_answers[current]
+    db_chat_history = saved_from_db.get("chat_history") if saved_from_db else None
 
-    display_review(review_text, current, total)
-
+    display_review(row["review_text"], current, total)
     sub_step = st.session_state.stage_2_sub_step[current]
-    answers = {}
+    current_answers = {}
 
+    query_count = 0 # Default
     if sub_step == "initial":
-        answers = render_initial_questions(current, saved_answers)
+        current_answers = render_initial_questions(current, saved_answers)
     elif sub_step in ["agent", "final"]:
-        render_agent_recommendation(current, stage_2_df, explanation_text)
+        render_agent_recommendation(current, stage_2_df)
+        
+        # Capture the count here
+        query_count = render_chat_interface(
+            current, 
+            stage_2_df, 
+            hub, 
+            show_input=(sub_step == "agent"), 
+            saved_chat_log=db_chat_history
+        )
+        
         if sub_step == "final":
-            answers = render_final_questions(current, saved_answers)
+            current_answers = render_final_questions(current, saved_answers)
 
-    handle_navigation(current, total, sub_step, answers, review_id, hub)
-    
-    
+    # Pass query_count to the handler
+    handle_navigation(current, total, sub_step, current_answers, review_id, hub, query_count=query_count)
 
 if __name__ == "__main__":
     main()

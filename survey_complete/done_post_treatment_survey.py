@@ -85,7 +85,7 @@ def main():
                      use_container_width=True, 
                      type="primary",
                      disabled=not st.session_state.get('post_treatment_survey_completed', False)):
-            st.switch_page("survey_complete/completion.py")
+            st.switch_page("survey_complete/done_completion.py")
 
         # Caption
         if not st.session_state.post_treatment_survey_completed:

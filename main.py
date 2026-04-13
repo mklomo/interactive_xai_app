@@ -128,13 +128,13 @@ else:
         icon=":material/quiz:"
     )
     done_post_treatment_page = st.Page(
-        "survey_complete/post_treatment_survey.py",
+        "survey_complete/done_post_treatment_survey.py",
         title="Thank You", 
         icon=":material/quiz:",
         default=(role == "DONE")
     )
     done_completion_page = st.Page(
-        "survey_complete/completion.py",
+        "survey_complete/done_completion.py",
         title="Thank You", 
         icon=":material/quiz:"
     )

@@ -110,8 +110,8 @@ def page_text():
             Imagine you were planning a trip and checking hotel reviews to decide where to stay. Your job? Spot whether a review is:
         </p>
         <ul>
-            <li>✅Genuine—written by someone who actually stayed at the 🏨hotel orr</li>
-            <li>❌Deceptive, a fake review crafted to trick you into thinking it’s legit.</li>
+            <li>✅Genuine—written by someone who actually stayed at the 🏨hotel or</li>
+            <li>❌Deceptive, a fake review crafted to trick you into thinking it’s authentic.</li>
         </ul>
         <p>
             The task consists of three stages:

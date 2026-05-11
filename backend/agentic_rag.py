@@ -25,14 +25,9 @@ TEXT_PATH = "backend/data/linguistic_cues_context.txt"
 
 def generate_texts(text_path):
     """
-        Take a text path and generate a texts lists
-        input:
-            text_path = file path
-        output:
-            texts = texts in a list format
+    Take a text path and generate a texts list
     """
-    with open(TEXT_PATH, "r") as file:
-        # Remove all newline characters
+    with open(text_path, "r") as file:   # ← use the passed argument
         text = file.read().replace("\n", "")
     texts = text.split("--")
     return texts
@@ -42,52 +37,41 @@ def generate_texts(text_path):
 
 
 
-# Standalone helper function for text splitter search
 def text_splitter_search(user_query: str) -> list[dict]:
     """
     Performs semantic search using Cohere embeddings and FAISS index.
-    
-    Args:
-        user_query (str): The search query.
-    
-    Returns:
-        list[dict]: List of dicts with 'text' keys for matching documents.
     """
     try:
-        # Load texts from pickle (as per refactor comment)
         texts = generate_texts(TEXT_PATH)
-        
-        # Load FAISS index
         text_split_index = faiss.read_index(TEXT_SPLITTER_INDEX_PATH)
-        
-        # Get query embedding
-        # print
-        # print(f"Query --> {user_query}")
-        query_embed = CO.embed(
+
+        # texts first in the call sometimes helps older SDK versions
+        embed_response = CO.embed(
             texts=[user_query],
             model="embed-english-v3.0",
             input_type="search_query",
-            embedding_types=["float"]
-        ).embeddings.float[0]
-        
-        # Retrieve nearest neighbors
+            embedding_types=["float"],
+        )
+
+        query_embed = embed_response.embeddings.float_[0]
+
         query_embed_np = np.array([query_embed], dtype=np.float32)
         distances, similar_item_ids = text_split_index.search(query_embed_np, NUMBER_OF_RESULTS)
-        
-        # Format results
+
         texts_np = np.array(texts)
         results = pd.DataFrame({
             'texts': texts_np[similar_item_ids[0]],
             'distance': distances[0]
         })
-        
-        results_dict_list = [{'text': text} for text in results['texts']]
-        return results_dict_list
-    
+
+        return [{'text': text} for text in results['texts']]
+
     except FileNotFoundError as e:
         raise ValueError(f"Missing file: {str(e)}")
     except Exception as e:
-        raise RuntimeError(f"Error in text_splitter_search: {str(e)}")
+        raise RuntimeError(f"Error in text_splitter_search: {str(e)}") from e
+
+        
 
 
 
@@ -178,6 +162,17 @@ def run_agent(user_query, review_df, model="command-a-03-2025"):
                 # System Instruction
                 "content": """
 Role: You are an Explainable AI assistant, acting as a patient tutor for undergraduate students learning about AI.
+
+CRITICAL RULE (always follow first):
+If the user's query is off-topic, gibberish, nonsense, unrelated to the specific review, its text, its words, its features, or the model's prediction on that review, respond with EXACTLY this sentence and nothing else:
+
+"The Review Agent cannot respond to queries outside the review."
+
+Do not explain, do not be helpful, do not try to interpret the gibberish — just return that exact message.
+
+Only when the query is clearly about the review or the model's prediction on it are you allowed to use tools and answer normally.
+
+
 Purpose: Your goal is to help students understand why an AI model, called the Review Agent, made a specific prediction on a review, by reasoning through the available data and providing simple, clear rationales that connect the dots without just listing facts.
 
 Method:
@@ -213,100 +208,75 @@ Tone: Clear, concise, and everyday – avoid jargon (explain if needed, e.g., "f
                 "content": user_query
             },
         ]
-    
-    # iteration = 0
-    
-    first_call = True
-    
-    # Step 2: Generate tool calls (if any)
-    # Chat Params based on user message
+    # CRITICAL: Inject the review DataFrame so the model knows what it's explaining
+    messages[1]["content"] += f"\nReview DataFrame: {review_df.to_dict(orient='records')}"
     chat_params = {
         "model": model,
         "messages": messages,
         "tools": tools,
         "temperature": 0.7
-        }
-    if first_call:
-        # Update User Content with the review DataFrame
-        messages[1]["content"] += f"\nReview DataFrame: {review_df.to_dict(orient='records')}"
-        # chat_params["tool_choice"] = "REQUIRED"  # Force tool use; valid for Cohere
-        first_call = False
+    }
+
     try:
-        # Generate response without tools
         response = CO.chat(**chat_params)
     except Exception as e:
         return f"API Error: {str(e)}"
      
+    # Step 2: Handle Tool Calls
     while response.message.tool_calls:
-        # print("TOOL PLAN:")
-        # print(response.message.tool_plan, "\n")
-        # print("TOOL CALLS:")
-        # Assistant for tool calls
+        # Add the assistant's tool call plan to history
         messages.append({
             "role": "assistant", 
-            # "content": response.message.content[0].text, 
             "tool_calls": response.message.tool_calls,
             "tool_plan": response.message.tool_plan,    
-            })
-        tool_content = []
-        for tool_call in response.message.tool_calls:
-            # If running a semantic search
-            if tool_call.function.name == "text_splitter_search":
-                #print(f"Tool Name: {tool_call.function.name}")
-                # Get the query
-                user_query = json.loads(tool_call.function.arguments)["user_query"]
-                #print(f"Text Splitter Query --> {user_query}")
-                # Get the reasults from the tool call
-                tool_results = text_splitter_search(user_query)
-                #print(f"Text Splitter TOOL RES--> {tool_results}")
-                # Append results
-                tool_content.append(json.dumps(tool_results))
-                # Append the tool output to the messages
-                messages.append({
-                    "role": "tool", 
-                    "tool_call_id": tool_call.id, 
-                    "content": tool_content
-                })
+        })
 
-            # elif running a prediction_context
-            elif tool_call.function.name == "get_prediction_context":
-                # Get the df
-                #print(f"\n ARGS -->{tool_call.function.arguments} \n")
-                review_df_dict = json.loads(tool_call.function.arguments)["review_df"][0]
+        # Process each tool call in this turn
+        for tool_call in response.message.tool_calls:
+            raw_args = tool_call.function.arguments
+            if isinstance(raw_args, str):
                 try:
-                    query_str = json.loads(tool_call.function.arguments)["user_query"] 
-                except:
-                    query_str = user_query
-                # Convert to a DF
-                #print(f" Review DF Dict{review_df_dict}")
-                #print(f"\nQuery --> {query_str}")
-                review_df = pd.DataFrame([review_df_dict])
-                # print(f" Review DF -> {review_df}")
-                # Get results from the prediction context
-                tool_results = get_prediction_context(review_df=review_df, user_query=query_str)
-                #print(f" Tool Results --> {tool_results}")
-                # Append results
-                tool_content.append(str(tool_results))
-                # Append the tool output to the messages
-                messages.append({
-                    "role": "tool", 
-                    "tool_call_id": tool_call.id, 
-                    "content": tool_content
-                })
-        
+                    args = json.loads(raw_args)
+                except json.JSONDecodeError:
+                    args = {}
+            else:
+                args = raw_args if isinstance(raw_args, dict) else {}
+            result_str = ""
+
+            if tool_call.function.name == "text_splitter_search":
+                tool_query = args.get("user_query", "")
+                if not tool_query.strip():
+                    tool_results = [{"text": "No specific context found for empty query."}]
+                else:
+                    tool_results = text_splitter_search(tool_query)
+                result_str = json.dumps(tool_results)
+                
+            elif tool_call.function.name == "get_prediction_context":
+                # Use a unique name for the query search string
+                ctx_query = args.get("user_query") or user_query                 
+                tool_results = get_prediction_context(review_df=review_df, 
+                                                      user_query=ctx_query)
+                result_str = json.dumps(tool_results)
             
-        # Step 4: Generate response
-        response = CO.chat(model=model, 
-                           messages=messages, 
-                           tools=tools, 
-                           temperature=0.7)
+            # Append the specific tool response to history
+            messages.append({
+                "role": "tool",
+                "tool_call_id": tool_call.id,
+                "content": [{"type": "text", "text": result_str}]
+            })
+
+        # Step 3: Get the next response (either more tools or the final answer)
+        response = CO.chat(
+            model=model, 
+            messages=messages, 
+            tools=tools, 
+            temperature=0.7
+        )
     
-    messages.append({"role": "assistant", "content": response.message.content[0].text})
-    # Print final response
-    # print("Response:")
-    # print(response.message.content[0].text)
-    # print("=" * 50)
-    # print(f"\nMessages --> {messages}")
+    # Step 4: Final Assistant Response
+    final_text = response.message.content[0].text
+    messages.append({"role": "assistant", "content": final_text})
+    
     return messages
 
 

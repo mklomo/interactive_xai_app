@@ -217,7 +217,7 @@ Your job is to build the student's understanding of how the AI made its decision
         response = CO.chat(
             model=model,
             messages=messages,
-            temperature=0.3
+            temperature=0.7
         )
         final_text = response.message.content[0].text
         messages.append({"role": "assistant", "content": final_text})

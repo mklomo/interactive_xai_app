@@ -146,15 +146,17 @@ def run_agent(user_query, review_df, model="command-a-03-2025"):
 
         # Safely prepare context
         context_data_df = review_df.drop(columns=["review_id", "stage"], errors="ignore").iloc[0]
-
+        # Feature Imprtance Scores from EBM
+        feature_imp_scores = get_static_explanation_data(df=review_df)
         context_data = {
             "review_text": str(context_data_df["review_text"]),
-            "feature_importance_scores": {
+            "review_featurization": {
                 "proportion_of_emotional_content_in_review": float(context_data_df["proportion_of_emotional_content_in_review"]),
                 "proportion_of_adjectives_in_review": float(context_data_df["proportion_of_adjectives_in_review"]),
                 "readability_of_review": float(context_data_df["readability_of_review"]),
                 "analytic_writing_style": float(context_data_df["analytic_writing_style"])
             },
+            "feature_importance_scores": feature_imp_scores,
             "ebm_prediction": str(context_data_df.get("ebm_prediction", "")),
             "additional_context_for_reasoning": docs_dict   # fixed typo
         }
@@ -172,11 +174,17 @@ Your role is to help users understand a hotel review and the AI model's predicti
 
 You have access to the following information for this review:
 - The full review text
-- Feature importance scores for four features:
-  - Emotional Content in the Review
+- Review feature analysis:
+  - Proportion of Emotional Content in the Review
   - Proportion of Adjectives in the Review
   - Readability of the Review
   - Analytic Writing Style of the Review
+  
+- EBM Feature importance scores for four features:
+  - Emotional Content in the Review Score
+  - Proportion of Adjectives in the Review Score
+  - Readability of the Review Score
+  - Analytic Writing Style of the Review Score
 - The model's final prediction (Genuine or Deceptive)
 
 Guidelines:

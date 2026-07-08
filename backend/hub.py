@@ -3,6 +3,7 @@ from backend.user_service import UserService
 from backend.response_service import ResponseService 
 from backend.reviews_service import ReviewService
 from backend.nat_lang_exp_service import LanguageExplanationService
+from backend.timing_service import TimingService
 
 
 
@@ -15,3 +16,4 @@ class Hub:
         self.reviews_service = ReviewService(database)
         self.response_service = ResponseService(database)
         self.nat_lang_exp_service = LanguageExplanationService(database)
+        self.timing_service = TimingService(database)

@@ -1,5 +1,6 @@
 import streamlit as st
 from backend.utils import initialize_session
+import re
 
 # Specify the roles
 ROLES = ["baseline", "static_exp", "static_with_dialogue", "dialogue_only"]
@@ -13,11 +14,11 @@ def login():
     # This is the login function
     with st.container(border=True):
         # Fixed: st.title does NOT support text_alignment → use markdown instead
-        st.markdown("<h1 style='text-align: center;'>Log in</h1>", unsafe_allow_html=True)
+        st.markdown("<h1 style='text-align: center;'>Study Registration</h1>", unsafe_allow_html=True)
    
         # Your Email
         email = st.text_input(
-            "Please enter your UNCG email",
+            "Please enter your email",
             key="login_page_email"
         ).strip().lower()
    
@@ -25,42 +26,50 @@ def login():
    
         _, col2, _ = st.columns(3)
         with col2:
-            if st.button("Log in", use_container_width=True, key="login_page_button"):
-                if not email or not password:
-                    st.error("Please enter your UNCG Email")
+            if st.button("Register Here", use_container_width=True, key="login_page_button"):
+                # Email Validation
+                if not email:
+                    st.error("Please enter your email address.")
                     st.stop()
-   
-                # Now safe to use st.session_state.hub (initialized in Main.py)
+                
+                # Validate email format
+                email_pattern = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
+                if not re.match(email_pattern, email):
+                    st.error("Please enter a **valid** email address (e.g., name@example.com).")
+                    st.stop()
+                    
+                # Check if user exists
                 user = st.session_state.hub.user_service.get_authenticated_user(email, password)
-                if user:
-                    # Get the user id
-                    user_id = st.session_state.hub.user_service.get_user_id(email)
-                    # Yes the user is logged in
-                    st.session_state.logged_in = True
-                    # User's session state
-                    st.session_state.user = user
-                    st.session_state.user_id = user_id
-                    # Determining the user role
-                    # if admin
-                    if st.session_state.user.email == st.secrets["admin_user"]["admin_user"]:
-                        st.session_state.role = "ADMIN"
-                    else:
-                        # Check if the User has answered all questions
-                        answered_count = st.session_state.hub.response_service.get_answer_count(user_id)
-                        is_completed = (answered_count == 28)
-                        # Check if work is completed
-                        if is_completed:
-                            st.session_state.role = "DONE"
-                        else:
-                            role_pos = st.session_state.user_id % 4
-                            st.session_state.role = ROLES[role_pos]
-                    # Users DF
-                    st.session_state.reviews_df = st.session_state.hub.reviews_service.get_reviews()
-                    # print(st.session_state.user)
-                    st.rerun()
-   
+                # Else create the user
+                if not user:
+                    # Create the new user
+                    user = st.session_state.hub.user_service.create_user(email, password)
+                # Get the user id
+                user_id = st.session_state.hub.user_service.get_user_id(email)
+                # Yes the user is logged in
+                st.session_state.logged_in = True
+                # User's session state
+                st.session_state.user = user
+                st.session_state.user_id = user_id
+                # Determining the user role
+                # if admin
+                if st.session_state.user.email == st.secrets["admin_user"]["admin_user"]:
+                    st.session_state.role = "ADMIN"
                 else:
-                    st.error("Invalid UNCG email")
+                    # Check if the User has answered all questions
+                    answered_count = st.session_state.hub.response_service.get_answer_count(user_id)
+                    is_completed = (answered_count == 28)
+                    # Check if work is completed
+                    if is_completed:
+                        st.session_state.role = "DONE"
+                    else:
+                        role_pos = st.session_state.user_id % 4
+                        st.session_state.role = ROLES[role_pos]
+                # Users DF
+                st.session_state.reviews_df = st.session_state.hub.reviews_service.get_reviews()
+                st.rerun()
+                    
+                     
 
 # ──────────────────────────────────────────────────────────────
 # NAVIGATION (LOGIN KEPT EXACTLY AS st.Page LIKE YOU WANTED)

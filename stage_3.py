@@ -3,6 +3,8 @@ from streamlit_scroll_to_top import scroll_to_here
 from typing import Dict, Optional
 from backend.filter_data import filter_data
 from backend.response import Response
+from datetime import datetime
+
 
 
 def setup_page():
@@ -88,6 +90,13 @@ def initialize_session_state(df):
     if "stage_3_answers" not in st.session_state:
         stage_3_df = filter_data(df=st.session_state.reviews_df, stage="stage_3")
         st.session_state.stage_3_answers = [{} for _ in range(len(df))]
+
+
+    # Tracking time
+    if "stage_3_start_time" not in st.session_state:
+        st.session_state.stage_3_start_time = datetime.now()
+    if "stage_3_end_time" not in st.session_state:
+        st.session_state.stage_3_end_time = None
 
 
 def display_review(review_text: str, current: int, total: int):
@@ -244,6 +253,14 @@ def handle_navigation(current: int, total: int, answers: dict, review_id: int, h
 
             st.session_state.stage_3_answers[current] = answers.copy()
             save_response(review_id, answers, hub)
+            if current == total - 1:
+                if st.session_state.stage_3_end_time is None:
+                    st.session_state.stage_3_end_time = datetime.now()
+                hub.timing_service.record_end_time(
+                    user_id=st.session_state.user_id,
+                    stage="stage_3"
+                )
+            
             st.session_state.stage_3_current_review += 1
             st.session_state.scroll_trigger = True
             st.rerun()
@@ -256,6 +273,13 @@ def main():
     stage_3_df = filter_data(df=st.session_state.reviews_df, stage=3)
     initialize_session_state(stage_3_df)
     scroll_to_top()
+
+    # === RECORD START TIME IN DATABASE when entering Stage 1 ===
+    hub.timing_service.record_start_time(
+        user_id=st.session_state.user_id,
+        stage="stage_3"
+    )
+    
     st.markdown(
         "<h1 style='text-align: center;'>Stage 3: Back to Solo, But Stronger 💪</h1>",
         unsafe_allow_html=True

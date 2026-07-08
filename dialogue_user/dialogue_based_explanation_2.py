@@ -10,6 +10,8 @@ import json
 from streamlit_scroll_to_top import scroll_to_here
 from typing import Optional, Dict
 from backend.response import Response
+from datetime import datetime
+
 
 
 
@@ -106,6 +108,12 @@ def initialize_session_state(df):
     
     if "stage_2_chat_messages" not in st.session_state:
         st.session_state.stage_2_chat_messages = {}
+
+    # Local timing for Stage 2 ===
+    if "stage_2_start_time" not in st.session_state:
+        st.session_state.stage_2_start_time = datetime.now()
+    if "stage_2_end_time" not in st.session_state:
+        st.session_state.stage_2_end_time = None
 
 # ──────────────────────────────────────────────────────────────────────────────
 #                               UI COMPONENTS
@@ -446,7 +454,7 @@ def render_chat_interface(current: int, stage_2_df, hub, show_input: bool, saved
                     res = run_agent(user_query=prompt, review_df=stage_2_df.iloc[[current]])
                     explanation = res[-1].get("content", "No response from agent.")
                 except Exception as e:
-                    explanation = f"Error contacting agent: {str(e)}. Please ask your question again"
+                    explanation = f"No response from Review Agent. Please ask your question again"
             
             # Add assistant message
             st.session_state.stage_2_chat_messages[current].append(
@@ -663,6 +671,14 @@ def handle_navigation(current: int, total: int, sub_step: str, answers: dict, re
                     return
                 st.session_state.stage_2_answers[current].update(answers)
                 save_response(review_id, answers, hub, is_final=True)
+                # === RECORD END TIME when finishing the LAST review ===
+                if current == total - 1:
+                    if st.session_state.stage_2_end_time is None:
+                        st.session_state.stage_2_end_time = datetime.now()
+                    hub.timing_service.record_end_time(
+                        user_id=st.session_state.user_id,
+                        stage="stage_2"
+                    )
                 st.session_state.stage_2_current_review += 1
                 # === ONLY scroll when moving to the NEXT review ===
                 if current < total - 1:
@@ -682,6 +698,12 @@ def main():
     scroll_to_top()
     stage_2_df = filter_data(df=st.session_state.reviews_df, stage=2)
     initialize_session_state(stage_2_df)
+
+    # === RECORD START TIME when entering Stage 2 ===
+    hub.timing_service.record_start_time(
+        user_id=st.session_state.user_id,
+        stage="stage_2"
+    )
     
     st.markdown("<h1>Stage 2: Team-Up with 🤖Review Agent 🤝</h1>", unsafe_allow_html=True)
 

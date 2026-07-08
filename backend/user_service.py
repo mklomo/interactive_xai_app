@@ -32,8 +32,10 @@ class UserService:
             # Write to DB
             results = self.database.execute_query(query, params, write=True)
             # Return a User instance
-            return User(*results[0]) if results else None
-        return None
+            if results:
+                new_user = self.get_user(email)
+                return new_user
+            return None
 
 
     def get_authenticated_user(self, email, password):

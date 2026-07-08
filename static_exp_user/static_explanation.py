@@ -8,6 +8,8 @@ from backend.filter_data import filter_data, filter_explanations
 from backend.static_exp import get_static_explanation_data, clean_feature_names, get_feature_df
 from backend.response import Response
 import markdown
+from datetime import datetime
+
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -102,6 +104,12 @@ def initialize_session_state(df):
     # Create the sub-step
     if "stage_2_sub_step" not in st.session_state:
         st.session_state.stage_2_sub_step = ["initial"] * len(df)
+
+    # Local timing for Stage 2 ===
+    if "stage_2_start_time" not in st.session_state:
+        st.session_state.stage_2_start_time = datetime.now()
+    if "stage_2_end_time" not in st.session_state:
+        st.session_state.stage_2_end_time = None
 
     
 
@@ -642,6 +650,14 @@ def handle_navigation(current: int, total: int, sub_step: str, answers: dict, re
 
                 st.session_state.stage_2_answers[current].update(answers)
                 save_response(review_id, answers, hub, is_final=True)
+                # === RECORD END TIME when finishing the LAST review ===
+                if current == total - 1:
+                    if st.session_state.stage_2_end_time is None:
+                        st.session_state.stage_2_end_time = datetime.now()
+                    hub.timing_service.record_end_time(
+                        user_id=st.session_state.user_id,
+                        stage="stage_2"
+                    )
                 st.session_state.stage_2_current_review += 1
                 # === ONLY scroll when moving to the NEXT review ===
                 if current < total - 1:
@@ -661,6 +677,12 @@ def main():
     initialize_session_state(stage_2_df)
     # Reset the scrolling
     scroll_to_top()
+    # === RECORD START TIME when entering Stage 2 ===
+    hub.timing_service.record_start_time(
+        user_id=st.session_state.user_id,
+        stage="stage_2"
+    )
+    
     st.markdown("<h1>Stage 2: Team-Up with 🤖Review Agent 🤝</h1>", unsafe_allow_html=True)
     total = len(stage_2_df)
     current = st.session_state.stage_2_current_review

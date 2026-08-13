@@ -66,6 +66,20 @@ def main():
     # # Centered column for clean stacked buttons
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
+        st.markdown(
+            "<div style='text-align:center; margin-top:1rem;'>"
+            "<p style='font-size:1.15rem; font-weight:600;'>Prolific participants</p>"
+            "<p style='font-size:1.05rem;'>Copy the completion code below and enter it on "
+            "Prolific to finish your submission.</p>"
+            "</div>",
+            unsafe_allow_html=True,
+        )
+
+        st.code("C1AW3OGB", language=None)
+
+        st.markdown("<div style='margin-top:1.5rem;'></div>", unsafe_allow_html=True)
+
+        
         if st.button("🚪 Log Out & Finish", type="primary", use_container_width=True):
             # 1. Clear the state (keeping the DB hub if necessary)
             for key in list(st.session_state.keys()):     

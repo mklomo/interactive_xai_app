@@ -47,6 +47,13 @@ class ReviewService:
             query += " WHERE review_set IN (0, :review_set)"
             params = {"review_set": int(review_set)}
 
+        # Without an explicit order Postgres may return rows in any order,
+        # so trial order could change between sessions for reasons that
+        # have nothing to do with the design - and with no record of it.
+        # Ordering by review_id makes the baseline sequence deterministic;
+        # shuffle_stage_2() then randomises it per participant on purpose.
+        query += " ORDER BY stage, review_set, review_id"
+
         results = self.database.execute_query(query, params)
         raw_df = pd.DataFrame(results, columns=self.COLUMNS)
         return raw_df.drop(columns=self.HIDDEN_COLUMNS).round(3)

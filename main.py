@@ -1,5 +1,6 @@
 import streamlit as st
 from backend.utils import initialize_session
+from backend.filter_data import shuffle_stage_2
 import re
 
 # Specify the roles
@@ -75,6 +76,18 @@ def login():
                         else st.session_state.review_set
                     )
                 )
+
+                # Randomise this participant's Stage-2 trial order, once the
+                # set is known. Seeded on user_id so a participant who
+                # resumes gets the same sequence - resume matches saved
+                # responses by review_id, so a fresh order would put them at
+                # the right index but the wrong review. Admins keep the
+                # database order.
+                if not is_admin:
+                    st.session_state.reviews_df = shuffle_stage_2(
+                        st.session_state.reviews_df,
+                        user_id=st.session_state.user_id,
+                    )
 
                 if is_admin:
                     st.session_state.role = "ADMIN"

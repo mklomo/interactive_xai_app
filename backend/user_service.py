@@ -8,11 +8,15 @@ class UserService:
         self.database = database
 
 
+    # Named explicitly rather than SELECT *, so that adding a column to the
+    # table cannot shift the positional unpacking below.
+    USER_COLUMNS = ["email", "password", "wave", "review_set"]
+
     def get_user(self, email):
-        query = "SELECT * FROM users WHERE email = :email"
+        query = f"SELECT {', '.join(self.USER_COLUMNS)} FROM users WHERE email = :email"
         params = {'email': email}
         results = self.database.execute_query(query, params)
-        return User(*results[0][1:]) if results else None
+        return User(*results[0]) if results else None
 
 
     def create_user(self, email, password):
@@ -46,10 +50,37 @@ class UserService:
         return None
 
     def get_user_id(self, email):
-        query = "SELECT * FROM users WHERE email = :email"
+        query = "SELECT user_id FROM users WHERE email = :email"
         params = {'email': email}
         results = self.database.execute_query(query, params)
         return results[0][0]
+
+    # ------------------------------------------------------------------
+    # Stage-2 review set assignment
+    # ------------------------------------------------------------------
+    def get_review_set(self, user_id):
+        """Return the participant's assigned set, or None if unassigned."""
+        query = "SELECT review_set FROM users WHERE user_id = :user_id"
+        results = self.database.execute_query(query, {'user_id': user_id})
+        return results[0][0] if results else None
+
+    def get_wave(self, user_id):
+        """1 = original collection (Stage-2 set 1, 75% AI accuracy)
+           2 = current collection (Stage-2 sets 2-4, 50% AI accuracy)
+
+        Recorded for the analysis - the app itself needs no branching,
+        because set 1 remains in `reviews` alongside sets 2-4.
+        """
+        query = "SELECT wave FROM users WHERE user_id = :user_id"
+        results = self.database.execute_query(query, {'user_id': user_id})
+        return results[0][0] if results else None
+
+    # Assignment is entirely the database's job:
+    #   migration 002 sets existing rows to wave 1 / set 1, and puts a
+    #   DEFAULT on both columns so every new registration is wave 2 with a
+    #   random set from 2-4. Both columns are NOT NULL, so there is nothing
+    #   for the application to backfill - read `user.wave` and
+    #   `user.review_set` off the User object returned by get_user().
     
 
 

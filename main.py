@@ -52,21 +52,44 @@ def login():
                 st.session_state.user = user
                 st.session_state.user_id = user_id
                 # Determining the user role
-                # if admin
-                if st.session_state.user.email == st.secrets["admin_user"]["admin_user"]:
+                # Wave 1 = original collection (Stage-2 set 1, 75% accuracy).
+                # Wave 2 = current collection (sets 2-4, 50%). Recorded for
+                # the analysis; the app needs no branching on it.
+                st.session_state.wave = st.session_state.user.wave
+                # Stage-2 review set: 1 for wave-1 participants (the original
+                # set, still present), 2-4 for wave 2. Assigned by the column
+                # DEFAULT at registration, so it is simply read here.
+                st.session_state.review_set = st.session_state.user.review_set
+                is_admin = (st.session_state.user.email
+                            == st.secrets["admin_user"]["admin_user"])
+
+                # Reviews this participant will see: Stage 1 + their Stage-2
+                # set + Stage 3. Admins get every set.
+                #
+                # Loaded before the role check so completion is judged
+                # against the reviews actually assigned to this participant
+                # rather than a hardcoded total.
+                st.session_state.reviews_df = (
+                    st.session_state.hub.reviews_service.get_reviews(
+                        review_set=None if is_admin
+                        else st.session_state.review_set
+                    )
+                )
+
+                if is_admin:
                     st.session_state.role = "ADMIN"
                 else:
-                    # Check if the User has answered all questions
-                    answered_count = st.session_state.hub.response_service.get_answer_count(user_id)
-                    is_completed = (answered_count == 28)
-                    # Check if work is completed
-                    if is_completed:
+                    answered_count = (
+                        st.session_state.hub.response_service.get_answer_count(user_id)
+                    )
+                    # >= rather than ==: an extra or duplicated response would
+                    # otherwise leave the participant permanently unfinished,
+                    # unable to reach the post-treatment survey.
+                    if answered_count >= len(st.session_state.reviews_df):
                         st.session_state.role = "DONE"
                     else:
                         role_pos = st.session_state.user_id % 4
                         st.session_state.role = ROLES[role_pos]
-                # Users DF
-                st.session_state.reviews_df = st.session_state.hub.reviews_service.get_reviews()
                 st.rerun()
                     
                      

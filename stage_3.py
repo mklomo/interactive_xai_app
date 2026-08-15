@@ -88,7 +88,10 @@ def initialize_session_state(df):
     if "stage_3_current_review" not in st.session_state:
         st.session_state.stage_3_current_review = 0
     if "stage_3_answers" not in st.session_state:
-        stage_3_df = filter_data(df=st.session_state.reviews_df, stage="stage_3")
+        # `df` is already the Stage-3 frame, filtered by the caller. An
+        # earlier version re-filtered reviews_df here into an unused
+        # variable, at one point passing stage="stage_3" against an
+        # integer column, which silently produced an empty frame.
         st.session_state.stage_3_answers = [{} for _ in range(len(df))]
 
 

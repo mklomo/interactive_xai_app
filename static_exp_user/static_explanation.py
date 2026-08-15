@@ -673,7 +673,11 @@ def main():
     hub = st.session_state.hub
     setup_page()
     stage_2_df = filter_data(df=st.session_state.reviews_df, stage=2)
-    lang_explanations_df = hub.nat_lang_exp_service.get_explanations()
+    # Filtered to this participant's set, matching how reviews_df is loaded
+    # at login. Admins (review_set None) get every set.
+    lang_explanations_df = hub.nat_lang_exp_service.get_explanations(
+        review_set=st.session_state.get("review_set")
+    )
     initialize_session_state(stage_2_df)
     # Reset the scrolling
     scroll_to_top()

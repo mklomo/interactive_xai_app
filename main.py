@@ -19,10 +19,12 @@ def login():
    
         # Your Email
         email = st.text_input(
-            "Please enter your email",
+            "Please enter your email. **Prolific participants:** do not enter your "
+            "personal email — use your Prolific ID in the form "
+            "`<Prolific ID>@email.prolific.com`",
             key="login_page_email"
         ).strip().lower()
-   
+
         password = email
    
         _, col2, _ = st.columns(3)
@@ -38,7 +40,7 @@ def login():
                 if not re.match(email_pattern, email):
                     st.error("Please enter a **valid** email address (e.g., name@example.com).")
                     st.stop()
-                    
+
                 # Check if user exists
                 user = st.session_state.hub.user_service.get_authenticated_user(email, password)
                 # Else create the user

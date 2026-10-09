@@ -91,7 +91,7 @@ def tutorial_condition():
         mod = st.session_state.user_id % 4
         if mod == 1:
             # Tutorial Link 1 - Static Feature Importance
-            tutorial = "https://youtu.be/HKWiA3dbn5g"
+            tutorial = "https://www.youtube.com/watch?v=F52u9hc3QH4"
         elif mod == 2:
             # Tutorial Link 2 - Static Feature Importance + Dialogue
             tutorial = "https://youtu.be/Ej076Pqaqvw"
